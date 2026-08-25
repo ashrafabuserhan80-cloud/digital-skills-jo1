@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum LessonType {
+  TEXT
+  VIDEO
+  INTERACTIVE
+  PRACTICAL
+  PROJECT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  role          Role      @default(STUDENT)
+  passwordHash  String
+  avatar        String?
+  points        Int       @default(0)
+  level         Int       @default(1)
+  gradeId       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  grade          Grade?           @relation(fields: [gradeId], references: [id])
+  progress       Progress[]
+  achievements   UserAchievement[]
+  quizResults    QuizResult[]
+  assignments    Assignment[]
+  assignmentsCreated Assignment[] @relation("TeacherAssignments")
+}
+
+model Grade {
+  id          String   @id @default(cuid())
+  name        String
+  number      Int
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  units  Unit[]
+  users  User[]
+}
+
+model Unit {
+  id          String   @id @default(cuid())
+  gradeId     String
+  title       String
+  description String?
+  domain      String
+  order       Int
+  semester    Int
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  grade  Grade    @relation(fields: [gradeId], references: [id])
+  lessons Lesson[]
+  quizzes Quiz[]
+}
+
+model Lesson {
+  id          String     @id @default(cuid())
+  unitId      String
+  title       String
+  content     Json
+  type        LessonType @default(TEXT)
+  duration    Int
+  order       Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  unit      Unit       @relation(fields: [unitId], references: [id])
+  progress  Progress[]
+  resources Resource[]
+}
+
+model Resource {
+  id        String   @id @default(cuid())
+  lessonId  String
+  title     String
+  type      String
+  url       String
+  createdAt DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+}
+
+model Quiz {
+  id           String   @id @default(cuid())
+  unitId       String
+  title        String
+  description  String?
+  questions    Json
+  timeLimit    Int?
+  passingScore Int      @default(60)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  unit        Unit          @relation(fields: [unitId], references: [id])
+  results     QuizResult[]
+}
+
+model QuizResult {
+  id        String   @id @default(cuid())
+  userId    String
+  quizId    String
+  score     Float
+  answers   Json
+  timeTaken Int
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  quiz Quiz @relation(fields: [quizId], references: [id])
+
+  @@unique([userId, quizId])
+}
+
+model Progress {
+  id         String   @id @default(cuid())
+  userId     String
+  lessonId   String
+  completed  Boolean  @default(false)
+  score      Float?
+  timeSpent  Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String
+  points      Int
+  criteria    Json
+  createdAt   DateTime @default(now())
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  teacherId   String
+  studentId   String
+  content     Json
+  dueDate     DateTime
+  completed   Boolean  @default(false)
+  score       Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher User @relation("TeacherAssignments", fields: [teacherId], references: [id])
+  student User @relation(fields: [studentId], references: [id])
+}
