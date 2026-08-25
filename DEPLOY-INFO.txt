@@ -1,0 +1,22 @@
+========================================
+  منصة مهاراتنا الرقمية - معلومات النشر
+========================================
+
+الموقع المباشر:
+https://digital-skills-git-main-ashrafabuserhan80-cloud.vercel.app
+
+لوحة إدارة الأدمن:
+https://digital-skills-git-main-ashrafabuserhan80-cloud.vercel.app/admin/login
+
+بيانات الدخول:
+  مدير المنصة:  aabuserhan80@gmail.com  |  admin123
+  طالب تجريبي:  student@test.com        |  123456
+  معلم تجريبي:  teacher@test.com        |  123456
+
+GitHub:
+https://github.com/ashrafabuserhan80-cloud/digital-skills-jo1
+
+تاريخ النشر: 2026-08-25
+
+ملاحظة: البيانات (الطلاب، الإعدادات) محفوظة في متصفح المستخدم (localStorage)
+         وليست على السيرفر. عند حذف بيانات المتصفح تُعاد الافتراضية.
