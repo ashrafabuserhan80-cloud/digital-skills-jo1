@@ -1,109 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    grade: "7",
-  });
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (form.password !== form.confirmPassword) {
-      alert("كلمتا المرور غير متطابقتين");
-      return;
-    }
-    setLoading(true);
-    // TODO: Implement actual registration
-    setTimeout(() => {
-      setLoading(false);
-      window.location.href = "/grade/7";
-    }, 1000);
-  };
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-gray-50">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🎯</div>
-          <CardTitle className="text-2xl">إنشاء حساب جديد</CardTitle>
-          <p className="text-sm text-sm text-gray-500">انضم إلينا وابدأ رحلة التعلم</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">الاسم الكامل</label>
-              <Input
-                placeholder="محمد أحمد"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">البريد الإلكتروني</label>
-              <Input
-                type="email"
-                placeholder="example@email.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                required
-                dir="ltr"
-                className="text-left"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">الصف الدراسي</label>
-              <select
-                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                value={form.grade}
-                onChange={(e) => setForm({ ...form, grade: e.target.value })}
-              >
-                <option value="7">الصف السابع</option>
-                <option value="8">الصف الثامن</option>
-                <option value="9">الصف التاسع</option>
-                <option value="10">الصف العاشر</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">كلمة المرور</label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-                dir="ltr"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">تأكيد كلمة المرور</label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={form.confirmPassword}
-                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                required
-                dir="ltr"
-              />
-            </div>
-            <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={loading}>
-              {loading ? "جاري الإنشاء..." : "إنشاء الحساب"}
-            </Button>
-          </form>
-          <div className="mt-6 text-center text-sm text-gray-500">
-            لديك حساب بالفعل؟{" "}
-            <Link href="/login" className="text-primary hover:underline font-medium">
-              سجّل الدخول
+        <CardContent className="p-8 text-center">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-3">طلب الانضمام للمنصة</h1>
+          <p className="text-gray-500 mb-6 leading-relaxed">
+            للتسجيل في المنصة يرجى التواصل مع مدير المنصة عبر البريد الإلكتروني.
+            سيتم مراجعة طلبك وإنشاء حسابك من قبل الإدارة.
+          </p>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <p className="text-sm text-blue-800 font-medium mb-2">📧 تواصل معنا عبر البريد:</p>
+            <a href="mailto:aabuserhan80@gmail.com?subject=طلب تسجيل في منصة مهاراتنا الرقمية&body=الاسم:%0Aالصف الدراسي:%0Aرقم الهاتف:%0Aاسم ولي الأمر:%0Aهاتف ولي الأمر:" className="text-blue-600 font-bold hover:underline text-lg" dir="ltr">
+              aabuserhan80@gmail.com
+            </a>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-4 mb-6 text-right">
+            <p className="text-sm font-medium text-gray-700 mb-2">📋 ما الذي تحتاجه عند التسجيل:</p>
+            <ul className="space-y-1.5 text-sm text-gray-600">
+              <li>• الاسم الكامل للطالب</li>
+              <li>• البريد الإلكتروني</li>
+              <li>• الصف الدراسي (7-10)</li>
+              <li>• رقم هاتف الطالب</li>
+              <li>• اسم ولي الأمر ورقم هاتفه</li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <Link href="/login">
+              <Button className="w-full" variant="gradient" size="lg">تسجيل الدخول</Button>
+            </Link>
+            <Link href="/">
+              <Button variant="outline" className="w-full">العودة للصفحة الرئيسية</Button>
             </Link>
           </div>
         </CardContent>

@@ -307,13 +307,18 @@ export default function HomePage() {
         <div className="container mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold mb-3">جاهز تبدأ رحلتك التعليمية؟</h2>
           <p className="text-blue-200 mb-6 max-w-lg mx-auto">
-            سجّل الآن واحصل على وصول كامل لجميع الدروس والاختبارات مجاناً
+            تواصل معنا عبر البريد الإلكتروني للتسجيل في المنصة
           </p>
-          <Link href="/register">
-            <Button size="lg" className="bg-[#f0c040] text-[#1e3a5f] hover:bg-[#e0b030] font-bold px-10">
-              سجل مجاناً الآن
-            </Button>
-          </Link>
+          <a href="mailto:aabuserhan80@gmail.com?subject=طلب تسجيل في منصة مهاراتنا الرقمية" className="text-white/90 hover:text-white underline underline-offset-4 text-lg" dir="ltr">
+            aabuserhan80@gmail.com
+          </a>
+          <div className="mt-6">
+            <Link href="/register">
+              <Button size="lg" className="bg-[#f0c040] text-[#1e3a5f] hover:bg-[#e0b030] font-bold px-10">
+                طلب انضمام
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
     </div>

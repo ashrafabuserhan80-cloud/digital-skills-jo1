@@ -28,7 +28,7 @@ export function Navbar() {
             <Button variant="ghost" size="sm">تسجيل الدخول</Button>
           </Link>
           <Link href="/register">
-            <Button variant="gradient" size="sm">ابدأ التعلم</Button>
+            <Button variant="gradient" size="sm">انضم للمنصة</Button>
           </Link>
         </div>
 
@@ -56,7 +56,7 @@ export function Navbar() {
               <Button variant="outline" size="sm" className="w-full">تسجيل الدخول</Button>
             </Link>
             <Link href="/register" className="flex-1">
-              <Button variant="gradient" size="sm" className="w-full">ابدأ التعلم</Button>
+              <Button variant="gradient" size="sm" className="w-full">انضم للمنصة</Button>
             </Link>
           </div>
         </div>
