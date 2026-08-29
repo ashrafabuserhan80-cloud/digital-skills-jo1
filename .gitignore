@@ -33,6 +33,7 @@ dev.log
 dev2.log
 dev2-err.log
 dev-output.log
+dev.err.log
 
 # env files (can opt-in for committing if needed)
 .env*

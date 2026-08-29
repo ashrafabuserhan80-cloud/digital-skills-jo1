@@ -45,21 +45,32 @@ export async function POST(request: Request) {
 // PATCH /api/admin/users - update a user
 export async function PATCH(request: Request) {
   try {
-    const { id, name, email, grade, parentName, parentPhone, phone, status } = await request.json();
+    const body = await request.json();
+    const { id } = body;
     if (!id) return NextResponse.json({ error: "المعرف مطلوب" }, { status: 400 });
 
-    const updated = await sql`
-      UPDATE users SET
-        name = COALESCE(${name}, name),
-        email = COALESCE(${email}, email),
-        grade = COALESCE(${grade}, grade),
-        parent_name = COALESCE(${parentName}, parent_name),
-        parent_phone = COALESCE(${parentPhone}, parent_phone),
-        phone = COALESCE(${phone}, phone),
-        status = COALESCE(${status}, status)
-      WHERE id = ${id}
-      RETURNING id, email, name, role, grade, status
-    `;
+    const fields: Record<string, unknown> = {};
+    if (body.name !== undefined) fields.name = body.name;
+    if (body.email !== undefined) fields.email = body.email;
+    if (body.grade !== undefined) fields.grade = body.grade;
+    if (body.parentName !== undefined) fields.parent_name = body.parentName;
+    if (body.parentPhone !== undefined) fields.parent_phone = body.parentPhone;
+    if (body.phone !== undefined) fields.phone = body.phone;
+    if (body.status !== undefined) fields.status = body.status;
+
+    const columns = Object.keys(fields);
+    if (columns.length === 0) {
+      return NextResponse.json({ error: "لا توجد حقول للتحديث" }, { status: 400 });
+    }
+
+    const values = columns.map((c) => fields[c]);
+    const setSqlRaw = columns.map((c, i) => `"${c}" = $${i + 1}`).join(", ");
+
+    const updated = await sql.unsafe(
+      `UPDATE users SET ${setSqlRaw} WHERE id = \$${values.length + 1}
+       RETURNING id, email, name, role, grade, status`,
+      [...values, id]
+    );
 
     if (updated.length === 0) return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
     return NextResponse.json({ user: updated[0] });
