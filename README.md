@@ -34,6 +34,7 @@ npm run dev
 - Tailwind CSS 4
 - TypeScript
 - PWA (يعمل بدون إنترنت)
+- PostgreSQL على Neon (قاعدة بيانات سحابية مشتركة)
 
 ## الميزات
 
