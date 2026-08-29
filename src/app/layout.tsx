@@ -3,6 +3,7 @@ import { Tajawal } from "next/font/google";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ServiceWorkerRegistration } from "@/components/layout/sw-registration";
+import { Labiba } from "@/components/assistant/labiba";
 import "./globals.css";
 
 const tajawal = Tajawal({
@@ -42,6 +43,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <Labiba />
       </body>
     </html>
   );
