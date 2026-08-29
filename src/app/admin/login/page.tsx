@@ -13,21 +13,34 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    setTimeout(() => {
-      if (email === "aabuserhan80@gmail.com" && password === "admin123") {
-        localStorage.setItem("admin_auth", "true");
-        localStorage.setItem("admin_email", email);
-        router.push("/admin");
-      } else {
-        setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.user?.role !== "ADMIN") {
+        setError("البريد الإلكتروني أو كلمة المرور غير صحيحة (صلاحية مدير مطلوبة)");
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    }, 500);
+
+      localStorage.setItem("admin_auth", "true");
+      localStorage.setItem("admin_email", email);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("token", data.token);
+      router.push("/admin");
+    } catch (err) {
+      setError("خطأ في الاتصال بالخادم");
+    }
+    setLoading(false);
   };
 
   return (

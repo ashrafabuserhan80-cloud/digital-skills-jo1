@@ -44,13 +44,44 @@ export default function AdminStudentsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("admin_students");
-    if (stored) {
-      setStudents(JSON.parse(stored));
-    } else {
-      setStudents(defaultStudents);
-      localStorage.setItem("admin_students", JSON.stringify(defaultStudents));
+    async function load() {
+      try {
+        const res = await fetch("/api/admin/users");
+        const data = await res.json();
+        if (data.users && data.users.length) {
+          const mapped = data.users
+            .filter((u: any) => u.role === "STUDENT")
+            .map((u: any) => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              grade: u.grade || 7,
+              phone: u.phone || "",
+              parentName: u.parent_name || "",
+              parentPhone: u.parent_phone || "",
+              status: u.status || "active",
+              joinDate: (u.created_at || "").slice(0, 10),
+              lastActive: "",
+              score: u.points || 0,
+            }));
+          if (mapped.length) {
+            setStudents(mapped);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load students from DB", e);
+      }
+      // Fallback to localStorage
+      const stored = localStorage.getItem("admin_students");
+      if (stored) {
+        setStudents(JSON.parse(stored));
+      } else {
+        setStudents(defaultStudents);
+        localStorage.setItem("admin_students", JSON.stringify(defaultStudents));
+      }
     }
+    load();
   }, []);
 
   const save = (updated: Student[]) => {
@@ -77,38 +108,80 @@ export default function AdminStudentsPage() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.email) return;
-    if (editStudent) {
-      const updated = students.map((s) => s.id === editStudent.id ? { ...s, ...form } : s);
-      save(updated);
-    } else {
-      const newStudent: Student = {
-        id: Date.now().toString(),
-        ...form,
-        status: "pending",
-        joinDate: new Date().toISOString().split("T")[0],
-        lastActive: "لم يسجل دخول بعد",
-        score: 0,
-      };
-      save([...students, newStudent]);
+    try {
+      if (editStudent) {
+        const res = await fetch("/api/admin/users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...editStudent, ...form, id: editStudent.id }),
+        });
+        await res.json();
+        const updated = students.map((s) => s.id === editStudent.id ? { ...s, ...form } : s);
+        save(updated);
+      } else {
+        const res = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            password: "123456",
+            grade: form.grade,
+            phone: form.phone,
+            parentName: form.parentName,
+            parentPhone: form.parentPhone,
+            role: "STUDENT",
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || "فشل إضافة الطالب");
+          setShowModal(false);
+          return;
+        }
+        const newStudent: Student = {
+          id: data.user?.id || Date.now().toString(),
+          ...form,
+          status: "active",
+          joinDate: new Date().toISOString().split("T")[0],
+          lastActive: "لم يسجل دخول بعد",
+          score: 0,
+        };
+        save([...students, newStudent]);
+      }
+    } catch (e) {
+      console.error("DB save error", e);
+      alert("فشل الاتصال بقاعدة البيانات");
     }
     setShowModal(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
+    } catch (e) {
+      console.error("DB delete error", e);
+    }
     save(students.filter((s) => s.id !== id));
     setShowDeleteConfirm(null);
   };
 
-  const toggleStatus = (id: string) => {
-    const updated = students.map((s) => {
-      if (s.id === id) {
-        return { ...s, status: s.status === "active" ? "inactive" : "active" } as Student;
-      }
-      return s;
-    });
-    save(updated);
+  const toggleStatus = async (id: string) => {
+    const current = students.find((s) => s.id === id);
+    if (!current) return;
+    const newStatus = current.status === "active" ? "inactive" : "active";
+    try {
+      await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+    } catch (e) {
+      console.error("DB toggle error", e);
+    }
+    save(students.map((s) => s.id === id ? { ...s, status: newStatus } as Student : s));
   };
 
   const stats = {

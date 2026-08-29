@@ -51,24 +51,35 @@ export default function AdminRegistrationsPage() {
 
   const filtered = registrations.filter((r) => filter === "all" || r.status === filter);
 
-  const handleApprove = (id: string) => {
+  const handleApprove = async (id: string) => {
     const reg = registrations.find((r) => r.id === id);
     if (!reg) return;
-    const students = JSON.parse(localStorage.getItem("admin_students") || "[]");
-    const newStudent = {
-      id: Date.now().toString(),
-      name: reg.name,
-      email: reg.email,
-      grade: reg.grade,
-      phone: reg.phone,
-      parentName: reg.parentName,
-      parentPhone: reg.parentPhone,
-      status: "active",
-      joinDate: new Date().toISOString().split("T")[0],
-      lastActive: "سجل دخول للتو",
-      score: 0,
-    };
-    localStorage.setItem("admin_students", JSON.stringify([...students, newStudent]));
+    // Create the student in the real database
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: reg.name,
+          email: reg.email,
+          password: "123456",
+          grade: reg.grade,
+          phone: reg.phone,
+          parentName: reg.parentName,
+          parentPhone: reg.parentPhone,
+          role: "STUDENT",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "تعذر إنشاء حساب الطالب");
+        return;
+      }
+    } catch (e) {
+      console.error("Approve registration DB error", e);
+      alert("فشل الاتصال بقاعدة البيانات");
+      return;
+    }
     save(registrations.map((r) => r.id === id ? { ...r, status: "approved" as const } : r));
     setSelectedReg(null);
   };

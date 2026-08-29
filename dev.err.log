@@ -1,0 +1,6 @@
+⚠ `images.domains` is deprecated in favor of `images.remotePatterns`. Please update next.config.ts to protect your application from malicious users.
+⚠ Warning: Next.js ignored package-lock.json in C:\Users\Bayan because it is outside the current Git repository (C:\Users\Bayan\Desktop\TEST\digital-skills-jo).
+ To use this directory, set `turbopack.root` in your Next.js config.
+
+⚠ Slow filesystem detected. The benchmark took 287ms. If \\?\C:\Users\Bayan\Desktop\TEST\digital-skills-jo\.next\dev is a network drive, consider moving it to a local folder.
+See more: https://nextjs.org/docs/app/guides/local-development
