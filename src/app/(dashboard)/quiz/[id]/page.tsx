@@ -154,8 +154,31 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
   };
 
   const handleSubmit = () => {
+    if (submitted) return;
     setSubmitted(true);
     setShowResult(true);
+
+    // Save result to the database (best-effort; requires a logged-in user)
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored && quiz) {
+        const user = JSON.parse(stored);
+        if (user && user.id) {
+          fetch("/api/quiz-results", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: user.id,
+              quizId: quizId,
+              score: scorePercent,
+              total: 100,
+            }),
+          }).catch(() => {});
+        }
+      }
+    } catch {
+      // ignore save errors
+    }
   };
 
   const handleNext = () => {

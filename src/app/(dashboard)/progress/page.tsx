@@ -1,28 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const userData = {
-  name: "أحمد",
-  grade: "الصف السابع",
-  points: 450,
-  level: 5,
-  streak: 7,
-  completedLessons: 12,
-  totalLessons: 32,
-  completedQuizzes: 4,
-  totalQuizzes: 8,
-  averageScore: 78,
-  rank: 15,
-  totalStudents: 120,
-  badges: [
-    { icon: "🌱", name: "المبتدئ", color: "bg-green-100 text-green-700" },
-    { icon: "🔥", name: "متوالي 7 أيام", color: "bg-orange-100 text-orange-700" },
-    { icon: "⭐", name: "متفوق", color: "bg-yellow-100 text-yellow-700" },
-  ],
+const gradeLabels: Record<number, string> = {
+  7: "الصف السابع",
+  8: "الصف الثامن",
+  9: "الصف التاسع",
+  10: "الصف العاشر",
 };
 
 const subjectProgress = [
@@ -43,42 +31,79 @@ const weeklyActivity = [
 ];
 const maxMins = Math.max(...weeklyActivity.map(d => d.mins));
 
-const recentActivity = [
-  { type: "lesson", title: "مكونات الحاسوب: العتاد", grade: "الصف 7", time: "اليوم 30 دقيقة", icon: "📖" },
-  { type: "quiz", title: "اختبار الوحدة الأولى", grade: "الصف 7", time: "أمس", score: "85%", icon: "📝" },
-  { type: "lesson", title: "أنواع الحواسيب", grade: "الصف 7", time: "أمس 15 دقيقة", icon: "📖" },
-  { type: "badge", title: "شارة متوالي 7 أيام", grade: "", time: "منذ 3 أيام", icon: "🔥" },
-  { type: "lesson", title: "تاريخ الحاسوب", grade: "الصف 7", time: "منذ 4 أيام 20 دقيقة", icon: "📖" },
-];
-
-const upcomingQuizzes = [
-  { title: "اختبار أنظمة التشغيل", grade: "الصف 7", due: "غداً", questions: 10 },
-  { title: "اختبار الشبكات", grade: "الصف 7", due: "بعد 3 أيام", questions: 8 },
-];
+interface ResultRow {
+  quiz_id: string;
+  score: number;
+  created_at: string;
+}
 
 export default function ProgressPage() {
+  const [data, setData] = useState<{
+    user: { id: string; name: string; grade: number; points: number; level: number };
+    stats: { quizzesTaken: number; avgScore: number; bestScore: number };
+    recentResults: ResultRow[];
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (!stored) {
+        setLoading(false);
+        return;
+      }
+      const user = JSON.parse(stored);
+      if (!user.id) {
+        setLoading(false);
+        return;
+      }
+      fetch(`/api/progress?userId=${encodeURIComponent(user.id)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j) setData(j);
+        })
+        .finally(() => setLoading(false));
+    } catch {
+      setLoading(false);
+    }
+  }, []);
+
+  const userData = data
+    ? {
+        name: data.user.name,
+        grade: gradeLabels[data.user.grade] ?? `الصف ${data.user.grade}`,
+        points: data.user.points,
+        level: data.user.level,
+      }
+    : { name: "طالب", grade: "الصف", points: 0, level: 1 };
+
+  const stats = data?.stats ?? { quizzesTaken: 0, avgScore: 0, bestScore: 0 };
+  const recentActivity = data
+    ? data.recentResults.slice(0, 5).map((r) => ({
+        type: "quiz",
+        title: `اختبار ${r.quiz_id}`,
+        grade: "",
+        time: new Date(r.created_at).toLocaleDateString("ar", { day: "numeric", month: "long" }),
+        score: `${r.score}%`,
+        icon: "📝",
+      }))
+    : [];
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="container mx-auto max-w-5xl">
-        {/* Welcome Banner */}
         <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8e] text-white rounded-2xl p-6 mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <p className="text-white/60 text-sm mb-1">{userData.grade}</p>
               <h1 className="text-2xl font-extrabold">مرحباً {userData.name} 👋</h1>
-              <p className="text-white/70 text-sm mt-1">أنت في المستوى {userData.level} - {userData.points} نقطة</p>
-            </div>
-            <div className="flex gap-3">
-              {userData.badges.map((b, i) => (
-                <div key={i} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${b.color} flex items-center gap-1.5`}>
-                  <span>{b.icon}</span> {b.name}
-                </div>
-              ))}
+              <p className="text-white/70 text-sm mt-1">
+                {loading ? "جارٍ التحميل..." : `أنت في المستوى ${userData.level} - ${userData.points} نقطة`}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-4 text-center">
@@ -88,26 +113,25 @@ export default function ProgressPage() {
           </Card>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-4 text-center">
-              <p className="text-3xl font-extrabold text-green-600">{userData.completedLessons}</p>
-              <p className="text-xs text-gray-500 mt-1">درس مكتمل</p>
+              <p className="text-3xl font-extrabold text-green-600">{stats.quizzesTaken}</p>
+              <p className="text-xs text-gray-500 mt-1">اختبار مكتمل</p>
             </CardContent>
           </Card>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-4 text-center">
-              <p className="text-3xl font-extrabold text-purple-600">{userData.averageScore}%</p>
+              <p className="text-3xl font-extrabold text-purple-600">{stats.avgScore}%</p>
               <p className="text-xs text-gray-500 mt-1">متوسط الدرجات</p>
             </CardContent>
           </Card>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-4 text-center">
-              <p className="text-3xl font-extrabold text-orange-600">🔥 {userData.streak}</p>
-              <p className="text-xs text-gray-500 mt-1">أيام متتالية</p>
+              <p className="text-3xl font-extrabold text-orange-600">{userData.level}</p>
+              <p className="text-xs text-gray-500 mt-1">المستوى</p>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {/* Subject Progress */}
           <Card className="md:col-span-2">
             <CardContent className="p-5">
               <h3 className="font-bold text-gray-900 mb-4">التقدم حسب المادة</h3>
@@ -133,7 +157,6 @@ export default function ProgressPage() {
             </CardContent>
           </Card>
 
-          {/* Weekly Activity Chart */}
           <Card>
             <CardContent className="p-5">
               <h3 className="font-bold text-gray-900 mb-4">نشاط هذا الأسبوع</h3>
@@ -151,54 +174,45 @@ export default function ProgressPage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-3 pt-3 border-t text-center">
-                <p className="text-xs text-gray-500">المجموع: <strong>{weeklyActivity.reduce((a, b) => a + b.mins, 0)}</strong> دقيقة</p>
-              </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Recent Activity */}
           <Card>
             <CardContent className="p-5">
-              <h3 className="font-bold text-gray-900 mb-3">آخر النشاطات</h3>
-              <div className="space-y-2">
-                {recentActivity.map((a, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                    <span className="text-2xl">{a.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{a.title}</p>
-                      <p className="text-xs text-gray-400">{a.time}</p>
+              <h3 className="font-bold text-gray-900 mb-3">آخر الاختبارات</h3>
+              {recentActivity.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4 text-center">
+                  لم تُكمل أي اختبار بعد. ابدأ اختباراً لتظهر نتيجتك هنا.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {recentActivity.map((a, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <span className="text-2xl">{a.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{a.title}</p>
+                        <p className="text-xs text-gray-400">{a.time}</p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">{a.score}</Badge>
                     </div>
-                    {a.score && <Badge variant="secondary" className="text-xs">{a.score}</Badge>}
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+              <div className="mt-4 pt-4 border-t text-sm text-gray-600">
+                أفضل نتيجة: <strong className="text-emerald-600">{stats.bestScore}%</strong>
               </div>
             </CardContent>
           </Card>
 
-          {/* Upcoming */}
           <Card>
             <CardContent className="p-5">
-              <h3 className="font-bold text-gray-900 mb-3">اختبارات قادمة</h3>
-              <div className="space-y-3">
-                {upcomingQuizzes.map((q, i) => (
-                  <div key={i} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{q.title}</p>
-                      <p className="text-xs text-gray-400">{q.questions} سؤال</p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">{q.due}</Badge>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4">
-                <h3 className="font-bold text-gray-900 mb-2 text-sm">الترتيب في الفصل</h3>
-                <div className="p-3 bg-blue-50 rounded-lg text-center">
-                  <p className="text-2xl font-extrabold text-blue-600">#{userData.rank}</p>
-                  <p className="text-xs text-gray-500">من {userData.totalStudents} طالب</p>
-                </div>
+              <h3 className="font-bold text-gray-900 mb-3">نصائح</h3>
+              <div className="space-y-3 text-sm text-gray-600">
+                <p>💡 أكمل اختباراتك لرفع نقاطك ومستواك.</p>
+                <p>🎯 راجع إجاباتك الخاطئة لتحسن نتيجتك في المرة القادمة.</p>
+                <p>📊 كل 100 نقطة ترفع مستواك درجة.</p>
               </div>
             </CardContent>
           </Card>
