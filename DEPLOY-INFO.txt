@@ -3,10 +3,13 @@
 ========================================
 
 الموقع المباشر:
-https://digital-skills-git-main-ashrafabuserhan80-cloud.vercel.app
+https://digital-skills-roan.vercel.app
 
 لوحة إدارة الأدمن:
-https://digital-skills-git-main-ashrafabuserhan80-cloud.vercel.app/admin/login
+https://digital-skills-roan.vercel.app/admin/login
+
+لوحة المعلم:
+https://digital-skills-roan.vercel.app/teacher
 
 بيانات الدخول:
   مدير المنصة:  aabuserhan80@gmail.com  |  admin123
@@ -16,7 +19,11 @@ https://digital-skills-git-main-ashrafabuserhan80-cloud.vercel.app/admin/login
 GitHub:
 https://github.com/ashrafabuserhan80-cloud/digital-skills-jo1
 
-تاريخ النشر: 2026-08-25
+قاعدة البيانات:
+  PostgreSQL على Neon السحابية (رابط DATABASE_URL في إعدادات Vercel Environment Variables)
+  جداول: users, quiz_results, student_progress
 
-ملاحظة: البيانات (الطلاب، الإعدادات) محفوظة في متصفح المستخدم (localStorage)
-         وليست على السيرفر. عند حذف بيانات المتصفح تُعاد الافتراضية.
+تاريخ النشر: 2026-08-29
+
+ملاحظة: بيانات المستخدمين ونتائج الاختبارات محفوظة في قاعدة البيانات السحابية
+         (Neon Postgres) وليست في المتصفح، فتشارك وتدوم على كل الأجهزة.

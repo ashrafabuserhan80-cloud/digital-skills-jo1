@@ -6,8 +6,9 @@
 
 | الوصف | الرابط |
 |-------|--------|
-| الموقع المباشر | https://digital-skills-git-main-ashrafabuserhan80-cloud.vercel.app |
-| لوحة الإدارة | https://digital-skills-git-main-ashrafabuserhan80-cloud.vercel.app/admin/login |
+| الموقع المباشر | https://digital-skills-roan.vercel.app |
+| لوحة الإدارة | https://digital-skills-roan.vercel.app/admin/login |
+| لوحة المعلم | https://digital-skills-roan.vercel.app/teacher |
 | GitHub | https://github.com/ashrafabuserhan80-cloud/digital-skills-jo1 |
 
 ## بيانات الدخول
