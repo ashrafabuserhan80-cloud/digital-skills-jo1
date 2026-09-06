@@ -881,15 +881,138 @@ export const LESSONS_DB: Record<string, Lesson> = {
 };
 
 // ===== مساعد لبيبة الذكي: دوال المعرفة المنهجية =====
+// يجيب لبيبة عن أي سؤال ضمن منهاج المهارات الرقمية للصفوف (7-10)
+// عبر البحث في كامل قاعدة الدروس (شرح + أسئلة أقيم تعلمي + مسرد + اختبارات)
+// مع دعم المرادفات العربية/الإنجليزية وصيغ الكلمات المختلفة.
 
 const ARABIC_STOPWORDS = new Set([
-  "ما","هي","هو","ما هو","ما هي","اذكر","عرّف","عرف","اشرح","فسر","بين","وضح","عدّد","عدد","متى","كيف","في","على","من","عن","الى","إلى","ثم","مع","اي","أي","ال","و","يكون","تكون","ماهي","ماهو","ما المقصود","ما معنى","ملخص","تعريف",
+  "ما","هي","هو","ما هو","ما هي","اذكر","عرّف","عرف","اشرح","فسر","بين","وضح","عدّد","عدد","متى","كيف","في","على","من","عن","الى","إلى","الي","ثم","مع","اي","أي","ال","و","يكون","تكون","ماهي","ماهو","ما المقصود","ما معنى","ملخص","تعريف","ماذا","ماهي","ماهو","لماذا","بماذا","دلني","عرفني","حياني","او","أو","ولا","فعلا","اذن","حيث","التي","الذي","وما","هذه","هذا","ذلك","تلك","ه","ي","التي","وتكون","بينما",
 ]);
+
+// مجموعات مرادفات: يتم البحث بكل مرادف في نص الدروس كلها
+const SYNONYM_GROUPS: string[][] = [
+  ["حاسوب","كمبيوتر","الحاسب","computer","معالج","جهاز"],
+  ["معالج","cpu","processor","المعالج","وحدة المعالجة"],
+  ["مكونات","مادية","عتاد","hardware","العتاد"],
+  ["برمجيات","برمجية","software","البرمجيات","تطبيقات"],
+  ["نظام تشغيل","انظمة التشغيل","windows","مايكروسوفت","او اس","os"],
+  ["شبكه","شبكات","network","الانترنت","شبكات الحاسوب"],
+  ["انترنت","الويب","web","online","عبر الانترنت"],
+  ["بيانات","data","معلومات","المعلومات","البيانات"],
+  ["البيانات والمعلومات","data"],
+  ["تحليل","analysis","التحليل","تنظيمها"],
+  ["تمثيل مرئي","visualization","التمثيل","مخططات بيانية","رسوم بيانية","charts"],
+  ["مخطط","chart","رسم بياني","بياني"],
+  ["متصفح","browser","جووجل","جوجل","العناوين"],
+  ["خادم","server","موقع","الموقع","استضافة"],
+  ["صفحة","web page","صفحات","موقع الكتروني","المواقع الالكترونية"],
+  ["ربط","النماذج","bus","ناقل","topology","نماذج الربط"],
+  ["اعطال","صيانة","الفشل","troubleshooting","اصلاح"] ,
+  ["ميدانية","مادية","الاعطال المادية","أعطال عتادية"],
+  ["برمجية","الاعطال البرمجية","أعطال برامج"],
+  ["رمال","رماية","السيبرانية","جرائم","جريمة","الجرائم"],
+  ["تكنولوجيا","التقنية","الحديثة","امكانيات"],
+  ["تعلم","التعليم","الالكتروني","منصات","متنديات"],
+  ["التعليم الالكتروني","منصات"],
+  ["هو","تعريف","يسمى","يسمي","المقصود","مفهوم"],
+  ["ذاكرة","ram","الذاكرة","تخزين","التخزين"],
+  ["قرص","hard","القرص","الصلب","تخزين خارجي"],
+  ["لغة","html","برمجة","اكواد","وسوم","الوسوم"],
+  ["الصفحات","الكترونية","انشاء","تنسيق"],
+  ["تنسيق","css","النصوص","الوان","الخطوط"],
+  ["قوائم","liste","تعليقات","الوسوم","التعليقات"],
+  ["الصور","images","img","صور"],
+  ["وسائط","multimedia","فيديو","صوت","الارتباطات","الارتباط"],
+  ["جداول","table","tables","جدول","rows","columns"],
+  ["برمجية","scratch","سكراتش","لبنات","كائنات"],
+  ["متغير","variable","المتغيرات","لولا"],
+  ["شرطية","condition","الجمل","الشرطية","اذا","if","شروط"],
+  ["html","لغة html","وسوم","الوسوم"],
+  ["المواقع","الموقع الالكتروني","صفحة الويب"],
+  ["ادخال","input","لوحة المفاتيح","الفأرة","ماسح"],
+  ["اخراج","output","الشاشة","الطابعة","السماعات"],
+  ["سماعات","تصميم","رسومات"],
+  ["انترنت الاشياء","iot","الذكاء","الاصطناعي"],
+  ["فيروس","فيروسات","برمجية خبيثة","الاختراق","تصيد"],
+  ["امن","حماية","الخصوصية","كلمة المرور","امان"],
+  ["مراجعة","سؤال","اختبار","وسيط","معدل","الانحراف","المدي"],
+  ["شبكة محلية","شبكات محلية","lan","الانترنت","شبكة واسعة","wan","man","شبكة مدنية"],
+  ["تحويل","التحويل","احول","تحويل من","التحويل من"],
+  ["اجهزه ادخال","ادخال","الادخال","input","لوحة المفاتيح","اجهزه الادخال"],
+  ["اجهزه اخراج","اخراج","الاخراج","output","الشاشة","الطابعة","اجهزه الاخراج"],
+  ["بيانات ومعلومات","الفرق بين البيانات والمعلومات","المعلومات","البيانات"],
+  ["تصيد","التصيد","احتيال","الاحتيال","انتحال","تنكر","phishing","الخداع"],
+  ["حمايه","احمي","وقاية","الوقاية","امان","الامن","السلامة","تدابير","وقائية"],
+  ["متصفح","browser","المتصفح","برنامج التصفح"],
+  ["موجّه","الموجّه","الموجاه","راوتر","router"],
+  ["سويتش","المبادل","السويتش","switch"],
+  ["مكونات الشبكه","المكونات المادية للشبكه","ip","مكونات الشبكة","عنوان الشبكه","عنوان ip","بروتوكولات","البروتوكول"],
+  ["عنوان","العنوان","ip","بروتوكول","البروتوكول"],
+  ["رابط","روابط","ارتباط","ارتباطات","تشعبي","hyperlink","اشعاع","الارتباط"],
+  ["ملكية","الملكية","حقوق","حقوق النشر","الفكرية","الحقوق"],
+  ["صيجانة","الصيانة","اصلاح","إصلاح","اعطال","الأعطال"],
+  ["جدول","جداول","table","الجدول","tr","th","td","الجداول"],
+  ["فرق","الفرق","قارن","المقارنة","بينما","الاختلاف"],
+  ["محتوى","المحتوى","المحتوى الرقمي","منشور","المنشور"],
+];
+
+// يُعيد الجذر النمطي لكلمة (يزيل الـ "ال" فقط دون قص عشوائي)
+function compactWord(w: string): string {
+  let t = w;
+  if (t.startsWith("ال")) t = t.slice(2);
+  return t;
+}
+
+// يُوسّع كلمات السؤال إلى كل المرادفات والصيغ المحتملة
+function expandQuery(query: string): string[] {
+  const tokens = tokenize(query).filter(meaningful);
+  const expanded = new Set<string>(tokens);
+  for (const tok of tokens) {
+    const tokN = compactWord(tok);
+    if (meaningful(tokN)) {
+      for (const group of SYNONYM_GROUPS) {
+        if (group.some((g) => g === tok || tokN === compactWord(g))) {
+          for (const g of group) if (meaningful(g)) expanded.add(g);
+        }
+      }
+      expanded.add(tokN);
+    }
+  }
+  return [...expanded];
+}
+
+// توكينات السؤال الأصلية + جذورها (لمطابقة عناوين الدروس/المقاطع بدقة)
+function originalWithRoots(query: string): string[] {
+  const tokens = tokenize(query);
+  const terms = new Set<string>();
+  for (const tok of tokens) {
+    if (meaningful(tok)) terms.add(tok);
+    const root = compactWord(tok);
+    if (root !== tok && meaningful(root)) terms.add(root);
+  }
+  // أزِل حرف العطف/الجر "و" و"ف" من بداية الكلمات (التنكر والتصيد -> تصيد)
+  const fixed: string[] = [];
+  for (const term of terms) {
+    if ((term.startsWith("و") || term.startsWith("ف")) && term.length > 2) {
+      const cut = term.slice(1);
+      if (meaningful(cut)) fixed.push(cut);
+    }
+  }
+  for (const f of fixed) terms.add(f);
+  return [...terms];
+}
+
+// مطابقة كلمة كاملة: يحول النص لمجموعة كلمات ويبحث عن المصطلح ككلمة كاملة
+function wordHit(text: string, term: string): boolean {
+  const words = new Set<string>(normalizeText(text).split(" "));
+  return words.has(normalizeText(term)) || words.has(compactWord(normalizeText(term)));
+}
 
 function normalizeText(s: string): string {
   let t = (s || "").toLowerCase();
   t = t.replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
-       .replace(/[ًٌٍَُِّْ]/g, "").replace(/[?!،,.;:()"'\-]/g, " ")
+       .replace(/ء/g, "").replace(/[ًٌٍَُِّْ]/g, "")
+       .replace(/[؟?!،,.;:()"'\-]/g, " ")
        .replace(/\s+/g, " ").trim();
   return t;
 }
@@ -912,44 +1035,202 @@ function allLessonText(lesson: Lesson): string {
   return parts.join(" ");
 }
 
-function findRelevantLessons(query: string): { lesson: Lesson; score: number }[] {
-  const qTokens = tokenize(query);
-  if (qTokens.length === 0) return [];
-  const results: { lesson: Lesson; score: number }[] = [];
-  for (const id of Object.keys(LESSONS_DB)) {
-    const lesson = LESSONS_DB[id];
-    const text = normalizeText(allLessonText(lesson));
-    const title = normalizeText(lesson.title);
-    let score = 0;
-    for (const tok of qTokens) {
-      if (title.includes(tok)) score += 4;
-      if (text.includes(tok)) score += 1;
-      if (normalizeText(lesson.domain).includes(tok)) score += 2;
-      if (normalizeText(lesson.unit).includes(tok)) score += 2;
+// مسافة الجذر للتفرقة بين كلمتين
+function jaroSimilarity(a: string, b: string): number {
+  if (a === b) return 1;
+  if (a.length === 0 || b.length === 0) return 0;
+  const aLen = a.length, bLen = b.length;
+  const matchDist = Math.max(Math.floor(Math.max(aLen, bLen) / 2) - 1, 0);
+  const aMatch = new Array(aLen).fill(false);
+  const bMatch = new Array(bLen).fill(false);
+  let matches = 0;
+  for (let i = 0; i < aLen; i++) {
+    const lo = Math.max(0, i - matchDist), hi = Math.min(i + matchDist + 1, bLen);
+    for (let j = lo; j < hi; j++) {
+      if (a[i] === b[j] && !bMatch[j]) { aMatch[i] = true; bMatch[j] = true; matches++; break; }
     }
-    if (score > 0) results.push({ lesson, score });
   }
-  results.sort((a, b) => b.score - a.score);
-  return results.slice(0, 3);
+  if (matches === 0) return 0;
+  let transpositions = 0, k = 0;
+  for (let i = 0; i < aLen; i++) {
+    if (aMatch[i]) {
+      while (!bMatch[k]) k++;
+      if (a[i] !== b[k]) transpositions++;
+      k++;
+    }
+  }
+  return (matches / aLen + matches / bLen + (matches - transpositions / 2) / matches) / 3;
 }
 
-function findAnswerBlock(lesson: Lesson, query: string): LessonBlock | null {
-  const qTokens = tokenize(query);
-  let best: { block: LessonBlock; score: number } | null = null;
-  for (const b of lesson.content) {
-    const text = b.text || "";
-    let score = 0;
-    for (const tok of qTokens) {
-      if (normalizeText(text).includes(tok)) score += 1;
-      if (b.title && normalizeText(b.title).includes(tok)) score += 2;
+// كلمات عامة (مقارنة/استفهام/وسوم) تُعطى وزناً منخفضاً حتى لا تخطف الاختيار
+const WEAK_WORDS = new Set([
+  "فرق","الفرق","قارن","المقارنه","المقارنة","اختلاف","الاختلاف","بينما","رق",
+  "ملكيه","الملكيه","مالكية","فكريه","الفكريه","ثقافيه","الحقوق","حقوق",
+  "وسم","الوسم","وسوم","الوسوم",
+  "مفهوم","المفهوم","المفاهيم","مفهومي","غير","نبذه","نبذة","تعريف","المقصود","يسمى","يسمي","وما",
+]);
+
+// التوكين يجب ألا يكون قصيراً جداً ولا جزءاً عشوائياً من كلمة
+function meaningful(term: string): boolean {
+  const t = normalizeText(term);
+  if (t.length < 2) return false;
+  // الاختصارات الإنجليزية (LAN, WAN, MAN, CPU, IP, URL, HTML, CSS, HCI) تبقى مقبولة
+  if (/^[a-z]{2,6}$/.test(t)) return true;
+  // تجاهل الجذور العشوائية القصيرة الناتجة عن قطع الكلمات
+  if (/^(ف|و|ب|ك|ل|رق|مان|تان|يات|ون|ات|ين|سم|تر|كريه|ريه)$/.test(t)) return false;
+  return true;
+}
+
+// أسئلة تعريف مباشرة: تُفضّل إجابة المسرد
+function isDefinitionQuestion(query: string): boolean {
+  const q = normalizeText(query);
+  return /^(ما|ماهو|ماهي|ما هو|ما هي|عرف|عرّف|ما معنى|ما المقصود|اذكر|اشرح)/.test(q)
+    || /\b(ما هو|ما هي|ماهو|ماهي)\b/.test(q)
+    || /ماذا يعني/.test(q) || /ما معنى/.test(q) || /ماهي/.test(q);
+}
+
+// يبحث في كامل دروس المنهاج (7-10) عن الأنسب للسؤال مع معالجة المرادفات
+// العنوان/المجال الأصلية تعطى وزناً أعلى، والمحتوى يُطابق كلمة كاملة.
+function findRelevantLessons(query: string): { lesson: Lesson; score: number }[] {
+  const originals = originalWithRoots(query);
+  const synonyms = expandQuery(query);
+  if (originals.length === 0) return [];
+  let results: { lesson: Lesson; score: number }[] = [];
+  const qN = normalizeText(query);
+
+  // قاعدة مباشرة: "عنوان IP" ينتمي لدرس مكونات الشبكة (وليس المواقع/الويب)
+  if (qN.includes("ip") && qN.includes("عنوان") && !qN.includes("موقع") && !qN.includes("الموقع")) {
+    if (LESSONS_DB["7-1-1-0"]) {
+      results.push({ lesson: LESSONS_DB["7-1-1-0"], score: 200 });
+      return results;
     }
-    if (score > 0 && (!best || score > best.score)) {
-      best = { block: b, score };
+  }
+  for (const id of Object.keys(LESSONS_DB)) {
+    const lesson = LESSONS_DB[id];
+    const titleN = normalizeText(lesson.title);
+    const domainN = normalizeText(lesson.domain);
+    const unitN = normalizeText(lesson.unit);
+    const text = normalizeText(allLessonText(lesson));
+    let score = 0;
+    for (const term of originals) {
+      if (!meaningful(term) || WEAK_WORDS.has(term)) continue; // تجاهل ضوضاء المصطلحات العامة
+      const isAbbr = /^[a-z]{2,6}$/.test(term);
+      if (wordHit(lesson.title, term) || titleN.includes(term)) { score += isAbbr ? 20 : 12; continue; }
+      if (domainN.includes(term)) score += 3;
+      if (unitN.includes(term)) score += 2;
+      if (wordHit(text, term)) score += isAbbr ? 6 : 2;
+    }
+    for (const term of synonyms) {
+      const t = normalizeText(term);
+      if (!meaningful(t) || WEAK_WORDS.has(t)) continue;
+      if (titleN.includes(t) || wordHit(lesson.title, t)) score += 5;
+      if (text.split(" ").includes(t) || text.split(" ").includes(compactWord(t))) score += 1;
+    }
+    // أضف درجة أفضل مقطع إجابة داخل الدرس (يقرّب الدروس التي شرح مفاهيمها)
+    const blockScore = bestBlockScore(lesson, query);
+    if (blockScore > 0) score += blockScore * 2;
+    score += comparisonBonus(lesson, query);
+    if (score > 0 && score >= 3) results.push({ lesson, score });
+  }
+  results.sort((a, b) => b.score - a.score);
+  results = results.filter((r) => r.score >= 5); // تأكد من تطابق دلالي فعلي
+  return results.slice(0, 4);
+}
+
+// يحسب درجة أفضل مقطع في الدرس (بدون تكرار مع findAnswerBlock)
+function bestBlockScore(lesson: Lesson, query: string): number {
+  const originals = originalWithRoots(query).filter((t) => meaningful(t) && !WEAK_WORDS.has(t));
+  const terms = expandQuery(query);
+  let best = 0;
+  for (const b of lesson.content) {
+    const combined = (b.text || "") + " " + (b.items || []).join(" ");
+    let score = 0;
+    const titleN = b.title ? normalizeText(b.title) : "";
+    for (const term of originals) {
+      const isAbbr = /^[a-z]{2,6}$/.test(term);
+      if (titleN && (wordHit(b.title!, term) || titleN.includes(term))) score += isAbbr ? 12 : 8;
+      if (wordHit(combined, term)) score += isAbbr ? 6 : 3;
+    }
+    for (const term of terms) {
+      const t = compactWord(term);
+      if (titleN && (titleN.includes(t) || titleN.includes(term))) score += 3;
+      if (wordHit(combined, term) || wordHit(combined, t)) score += 1;
+    }
+    if (b.type === "fun" || b.type === "tip") score *= 0.5;
+    if (score > best) best = score;
+  }
+  return best;
+}
+
+// مكافأة خاصة لأسئلة "ما الفرق بين X و Y": درس يحتوي المفهومين معاً
+function comparisonBonus(lesson: Lesson, query: string): number {
+  const m = normalizeText(query);
+  if (!m.includes("الفرق") && !m.includes("فرق") && !m.includes("قارن")) return 0;
+  const parts = m.split("و");
+  if (parts.length < 2) return 0;
+  const text = normalizeText(allLessonText(lesson));
+  let both = 0;
+  for (const term of [...originalWithRoots(query)]) {
+    if (WEAK_WORDS.has(term) || !meaningful(term)) continue;
+    if (wordHit(text, term)) both++;
+  }
+  return both >= 2 ? 40 : 0;
+}
+
+// يجد أفضل مقطع في الدرس للإجابة (يفضّل الأسئلة المحلولة وشرح المفهوم)
+function findAnswerBlock(lesson: Lesson, query: string): LessonBlock | null {
+  const originals = originalWithRoots(query);
+  const terms = expandQuery(query);
+  let best: { block: LessonBlock; score: number; n: number } | null = null;
+  for (const b of lesson.content) {
+    const text = (b.text || "").trim();
+    const items = (b.items || []).join(" ");
+    const combined = text + " " + items;
+    let score = 0;
+    let n = 0;
+    for (const term of originals) {
+      if (b.title && (wordHit(b.title, term) || normalizeText(b.title).includes(term))) { score += 8; n++; }
+      if (wordHit(combined, term)) { score += 3; n++; }
+    }
+    for (const term of terms) {
+      const t = compactWord(term);
+      if (b.title && (normalizeText(b.title).includes(t) || normalizeText(b.title).includes(term))) score += 3;
+      if (wordHit(combined, term) || wordHit(combined, t)) score += 1;
+    }
+    if (b.type === "fun" || b.type === "tip") score *= 0.5;
+    if (score > 0 && (!best || (score > best.score || (score === best.score && n > best.n)))) {
+      best = { block: b, score, n };
     }
   }
   return best ? best.block : null;
 }
 
+// يستخرج تعريف مصطلح من المسرد إن وجد
+function glossaryDefinition(lesson: Lesson, query: string): string | null {
+  const terms = expandQuery(query);
+  for (const b of lesson.content) {
+    if (b.type === "list" && b.items && /مسرد/i.test(b.title || "")) {
+      for (const item of b.items) {
+        const head = item.slice(0, 60);
+        const headN = normalizeText(head);
+        if (terms.some((t) => head.includes(t) || headN.includes(normalizeText(t)) || wordHit(head, t))) {
+          return item;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// يوفر أفضل مجمل درس للمرادفات عندما لا يجد تطابقاً واضحاً
+function fallbackAnswer(query: string): string {
+  return (
+    "أنا لبيبة 🌟 أجيب عن كل أسئلة مادة المهارات الرقمية للصفوف من السابع حتى العاشر: مكونات الحاسوب، أنظمة التشغيل، الشبكات، أمن المعلومات، الجرائم الإلكترونية، سكراتش، تحليل البيانات، و لغة HTML وغيرها. " +
+    "لم أجد في محتوى المنهاج المتوفر درساً يطابق هذا السؤال بالضبط، لكن بإمكانك أن تسألني بصيغة أخرى، مثل: «ما هو نظام التشغيل؟» أو «ما الفرق بين البيانات والمعلومات؟» أو «كيف أحول من العشري إلى الثنائي؟»"
+  );
+}
+
+// يجد الرد المناسب لأي سؤال ضمن المنهاج (7-10)
 export function answerQuestion(userQuestion: string): {
   answer: string;
   grade: number;
@@ -960,7 +1241,7 @@ export function answerQuestion(userQuestion: string): {
   const relevant = findRelevantLessons(userQuestion);
   if (relevant.length === 0) {
     return {
-      answer: "آسفة يا صديقي، لم أجد إجابة مباشرة على سؤالك في محتوى المنهاج المتوفر. يمكنك أن تسألني عن أي موضوع من دروس مهاراتنا الرقمية، مثل: مكونات الحاسوب، أنظمة التشغيل، الشبكات، تحليل البيانات، البرمجة، أو أمان الإنترنت. 💙",
+      answer: fallbackAnswer(userQuestion),
       grade: 0,
       domain: "",
       lessonTitle: "",
@@ -969,17 +1250,34 @@ export function answerQuestion(userQuestion: string): {
   }
 
   const top = relevant[0];
+
+  // أسئلة تعريف مباشرة: نفضّل تعريف المسرد إن توفر
+  if (isDefinitionQuestion(userQuestion)) {
+    const gloss = glossaryDefinition(top.lesson, userQuestion);
+    if (gloss) {
+      return {
+        answer: `وفقاً لدرس «${top.lesson.title}» من ${top.lesson.unit} (الصف ${top.lesson.grade}):\n\n${gloss}`,
+        grade: top.lesson.grade,
+        domain: top.lesson.domain,
+        lessonTitle: top.lesson.title,
+        lessonId: Object.keys(LESSONS_DB).find((id) => LESSONS_DB[id] === top.lesson) || null,
+      };
+    }
+  }
+
   const block = findAnswerBlock(top.lesson, userQuestion);
 
   const lines: string[] = [];
-  lines.push(`وفقاً لدرس «${top.lesson.title}» من ${top.lesson.unit}:`);
+  lines.push(`وفقاً لدرس «${top.lesson.title}» من ${top.lesson.unit} (الصف ${top.lesson.grade}):`);
   lines.push("");
   if (block && block.text) {
     lines.push(block.text);
+  } else if (block && block.items && block.items.length > 0) {
+    lines.push(...block.items.map((it) => `• ${it}`));
   }
   lines.push("");
   const brief = top.lesson.objectives.find((o) =>
-    tokenize(userQuestion).some((t) => normalizeText(o).includes(t))
+    expandQuery(userQuestion).some((t) => normalizeText(o).includes(compactWord(t)) || normalizeText(o).includes(t))
   ) || top.lesson.objectives[0];
   if (brief) lines.push(`• ${brief}`);
   if (block && block.tip) lines.push("", `🎯 خلاصة: ${block.tip}`);
@@ -996,8 +1294,8 @@ export function answerQuestion(userQuestion: string): {
 export function greetingsReply(message: string): string | null {
   const m = normalizeText(message);
   if (/(مرحبا|اهلا|اهلاً|هاي|سلام|صباح|مساء)/.test(m)) {
-    return "أهلاً وسهلاً بك! أنا لبيبة، مساعدتك الذكية في مادة المهارات الرقمية. اسألني عن أي موضوع في دروسك وسأساعدك على فهمه. 😊";
+    return "أهلاً وسهلاً بك! أنا لبيبة 🤖💙 مساعدتك الذكية في مادة المهارات الرقمية. اسألني عن أي سؤال في دروسك من الصف السابع حتى العاشر وسأفهمك إياه بكل وضوح.";
   }
-  if (/(شكرا|شكراً|ثانكس|تسلم|مشكور)/.test(m)) return "العفو يا رفيقي! أنا هنا دائماً لمساعدتك في فهم أي درس. 💙";
+  if (/(شكرا|شكراً|ثانكس|تسلم|مشكور)/.test(m)) return "العفو يا رفيقي! أنا هنا دائماً لمساعدتك في فهم دروسك من الصف السابع حتى العاشر. 💙";
   return null;
 }
